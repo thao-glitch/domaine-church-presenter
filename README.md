@@ -4,7 +4,7 @@ Full-screen live output for worship services — hymns, Bibles and announcements
 
 ## Website
 
-The landing page is in the `website/` folder and is published at GitHub Pages.
+The landing page is in the `docs/` folder and is published at GitHub Pages.
 
 ## Features
 
