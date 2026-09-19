@@ -340,12 +340,12 @@ on conflict (slug) do nothing;
 
 -- ------------------------------------------------- church_id columns
 do $$
-declare host uuid;
+declare v_church uuid;
 begin
-  select id into host from public.churches where slug = 'domaine-church' limit 1;
-  if host is null then
+  select id into v_church from public.churches where slug = 'domaine-church' limit 1;
+  if v_church is null then
     insert into public.churches (name, slug) values ('Domaine Church', 'domaine-church') on conflict (slug) do nothing;
-    select id into host from public.churches where slug = 'domaine-church' limit 1;
+    select id into v_church from public.churches where slug = 'domaine-church' limit 1;
   end if;
 
   alter table public.profiles    add column if not exists church_id uuid references public.churches (id) on delete set null;
@@ -359,16 +359,16 @@ begin
   alter table public.slide_sets  add column if not exists church_id uuid references public.churches (id) on delete cascade;
   alter table public.stage       add column if not exists church_id uuid references public.churches (id) on delete cascade;
 
-  update public.profiles   set church_id = host where church_id is null;
-  update public.members    set church_id = host where church_id is null;
-  update public.services   set church_id = host where church_id is null;
-  update public.events     set church_id = host where church_id is null;
-  update public.channels   set church_id = host where church_id is null;
-  update public.messages   set church_id = host where church_id is null;
-  update public.files      set church_id = host where church_id is null;
-  update public.sessions   set church_id = host where church_id is null;
-  update public.slide_sets set church_id = host where church_id is null;
-  update public.stage      set church_id = host where church_id is null;
+  update public.profiles   set church_id = v_church where church_id is null;
+  update public.members    set church_id = v_church where church_id is null;
+  update public.services   set church_id = v_church where church_id is null;
+  update public.events     set church_id = v_church where church_id is null;
+  update public.channels   set church_id = v_church where church_id is null;
+  update public.messages   set church_id = v_church where church_id is null;
+  update public.files      set church_id = v_church where church_id is null;
+  update public.sessions   set church_id = v_church where church_id is null;
+  update public.slide_sets set church_id = v_church where church_id is null;
+  update public.stage      set church_id = v_church where church_id is null;
 end $$;
 
 -- Channels: each church owns its channel keys.
