@@ -1001,9 +1001,10 @@ end $$;
 do $$ begin
   if not exists (select 1 from pg_policy where polrelid = 'public.prayers'::regclass and polname = 'prayers_select') then
     create policy "prayers_select" on public.prayers for select using (
-      church_id = public.my_church_id()
-      and (not is_private or author_email = auth.jwt() ->> 'email' or public.is_editor())
-    ) or public.is_platform_admin();
+      public.is_platform_admin()
+      or (church_id = public.my_church_id()
+        and (not is_private or author_email = auth.jwt() ->> 'email' or public.is_editor()))
+    );
   end if;
   if not exists (select 1 from pg_policy where polrelid = 'public.prayers'::regclass and polname = 'prayers_insert') then
     create policy "prayers_insert" on public.prayers for insert with check (church_id = public.my_church_id() and author_email = auth.jwt() ->> 'email');
