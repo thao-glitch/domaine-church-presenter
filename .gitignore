@@ -7,3 +7,6 @@ output.txt
 # Local Supabase credentials (real values must never be committed)
 supabase.ini
 bin/Debug/supabase.ini
+
+# Web app dependencies
+webapp/node_modules/
