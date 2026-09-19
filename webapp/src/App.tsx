@@ -18,6 +18,13 @@ import { StageViewPage } from './pages/StageViewPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { ChurchPage } from './pages/ChurchPage';
 import { PlatformAdminPage } from './pages/PlatformAdminPage';
+import { FeedPage } from './pages/FeedPage';
+import { ContentPage } from './pages/ContentPage';
+import { PlanningPage } from './pages/PlanningPage';
+import { AttendancePage } from './pages/AttendancePage';
+import { GroupsPage } from './pages/GroupsPage';
+import { GivingPage } from './pages/GivingPage';
+import { RecordingsPage } from './pages/RecordingsPage';
 
 export function App() {
   return (
@@ -122,9 +129,16 @@ function Shell() {
 
   const nav: NavItem[] = [
     { hash: '/dashboard', label: 'Dashboard', icon: Icon.Home, show: true },
+    { hash: '/feed', label: 'Church Feed', icon: Icon.Chat, show: true },
     { hash: '/members', label: 'Members', icon: Icon.Users, show: true },
+    { hash: '/groups', label: 'Groups', icon: Icon.Users, show: true },
     { hash: '/schedule', label: 'Services & Events', icon: Icon.Calendar, show: true },
+    { hash: '/content', label: 'Content Studio', icon: Icon.Upload, show: canEdit },
+    { hash: '/planning', label: 'Planning', icon: Icon.Stage, show: canEdit },
+    { hash: '/attendance', label: 'Attendance', icon: Icon.Users, show: canEdit },
     { hash: '/media', label: 'Media', icon: Icon.Upload, show: true },
+    { hash: '/archive', label: 'Sermon Archive', icon: Icon.Video, show: true },
+    { hash: '/giving', label: 'Giving', icon: Icon.Calendar, show: true },
     { hash: '/chat', label: 'Chat', icon: Icon.Chat, show: true },
     { hash: '/sessions', label: 'Online Sessions', icon: Icon.Video, show: true },
     { hash: '/stage', label: 'Stage (Presenter)', icon: Icon.Stage, show: canPresent },
@@ -197,6 +211,13 @@ function Sidebar({ items, active, churchName }: { items: NavItem[]; active: stri
 
 function renderPage(hash: string): ReactNode {
   if (hash.startsWith('/stage')) return <PresenterPage />;
+  if (hash.startsWith('/feed')) return <FeedPage />;
+  if (hash.startsWith('/content')) return <ContentPage />;
+  if (hash.startsWith('/planning')) return <PlanningPage />;
+  if (hash.startsWith('/attendance')) return <AttendancePage />;
+  if (hash.startsWith('/groups')) return <GroupsPage />;
+  if (hash.startsWith('/giving')) return <GivingPage />;
+  if (hash.startsWith('/archive')) return <RecordingsPage />;
   if (hash.startsWith('/members')) return <MembersPage />;
   if (hash.startsWith('/schedule')) return <SchedulePage />;
   if (hash.startsWith('/media')) return <MediaPage />;
