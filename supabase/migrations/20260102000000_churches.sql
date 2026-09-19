@@ -259,29 +259,16 @@ end $$;
 
 do $$ begin
   if not exists (select 1 from pg_policy where polrelid = 'public.slides'::regclass and polname = 'slides_select') then
-    create policy "slides_select" on public.slides for select using (church_id = public.my_church_id());
+    create policy "slides_select" on public.slides for select using (set_id in (select id from public.slide_sets where church_id = public.my_church_id()));
   else
     drop policy "slides_select" on public.slides;
-    create policy "slides_select" on public.slides for select using (church_id = public.my_church_id());
+    create policy "slides_select" on public.slides for select using (set_id in (select id from public.slide_sets where church_id = public.my_church_id()));
   end if;
   if not exists (select 1 from pg_policy where polrelid = 'public.slides'::regclass and polname = 'slides_write') then
-    create policy "slides_write" on public.slides for all using (public.is_presenter() and church_id = public.my_church_id()) with check (public.is_presenter() and church_id = public.my_church_id());
+    create policy "slides_write" on public.slides for all using (public.is_presenter() and set_id in (select id from public.slide_sets where church_id = public.my_church_id())) with check (public.is_presenter() and set_id in (select id from public.slide_sets where church_id = public.my_church_id()));
   else
     drop policy "slides_write" on public.slides;
-    create policy "slides_write" on public.slides for all using (public.is_presenter() and church_id = public.my_church_id()) with check (public.is_presenter() and church_id = public.my_church_id());
-  end if;
-end $$;
-
--- slides carry the church of their set
-update public.slides s set church_id = ss.church_id
-  from public.slide_sets ss where s.set_id = ss.id and s.church_id is null;
-
-do $$ begin
-  if not exists (select 1 from pg_policy where polrelid = 'public.slides'::regclass and polname = 'slides_select') then
-    create policy "slides_select" on public.slides for select using (church_id = public.my_church_id());
-  else
-    drop policy "slides_select" on public.slides;
-    create policy "slides_select" on public.slides for select using (church_id = public.my_church_id());
+    create policy "slides_write" on public.slides for all using (public.is_presenter() and set_id in (select id from public.slide_sets where church_id = public.my_church_id())) with check (public.is_presenter() and set_id in (select id from public.slide_sets where church_id = public.my_church_id()));
   end if;
 end $$;
 
