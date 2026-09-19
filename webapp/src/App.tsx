@@ -89,7 +89,13 @@ function SetupScreen() {
         <div className="card-actions">
           <Button onClick={save}>Save and reload</Button>
         </div>
-        {saved && <p className="ok">Saved. Reloading…</p>}
+        {saved && (
+          <p className="ok">
+            Saved — reloading…<br />
+            <b>Next screen:</b> create your church account (email + password) on the
+            login page, then you're in.
+          </p>
+        )}
         <div className="setup-note">
           Get URL + key from Supabase → <i>Project Settings → API</i>. Deploy the token
           function by following <b>docs/supabase/LIVEKIT.md</b>. Values only ever live in

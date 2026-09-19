@@ -66,6 +66,7 @@ export function LoginPage() {
           </Button>
           <p className="auth-note muted">
             New accounts default to <b>Member</b>. Leadership assigns ministry roles after your first log in.
+            If your church uses email confirmation, click the link in your inbox before logging in.
           </p>
         </div>
       </div>
