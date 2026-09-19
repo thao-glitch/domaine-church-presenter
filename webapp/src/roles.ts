@@ -13,6 +13,7 @@ export const ROLES: RoleDef[] = [
   { name: 'Pastor', tier: 'leader', canEdit: true, canPresent: true, canSchedule: true },
   { name: 'Assistant Pastor', tier: 'leader', canEdit: true, canPresent: true, canSchedule: true },
   { name: 'Elder', tier: 'leader', canEdit: true, canPresent: true, canSchedule: true },
+  { name: 'Church Admin', tier: 'leader', canEdit: true, canPresent: true, canSchedule: true },
   { name: 'Deacon', tier: 'editor', canEdit: true, canPresent: false, canSchedule: true },
   { name: 'Deaconess', tier: 'editor', canEdit: true, canPresent: false, canSchedule: true },
   { name: 'Evangelist', tier: 'editor', canEdit: true, canPresent: false, canSchedule: true },

@@ -13,6 +13,10 @@ export interface Profile {
   church_id: string | null;
 }
 
+// Roles allowed to manage users & roles inside their own church.
+const CHURCH_ADMIN_ROLES = ['Church Admin', 'Bishop', 'Senior Pastor', 'Pastor', 'Assistant Pastor', 'Elder'];
+const PREVIEW_KEY = 'dc_preview_church';
+
 interface AuthState {
   configuring: boolean;
   user: User | null;
@@ -23,12 +27,17 @@ interface AuthState {
   canEdit: boolean;
   canPresent: boolean;
   canSchedule: boolean;
+  isAdmin: boolean;
+  canManageUsers: boolean;
+  previewChurchId: string | null;
   ready: boolean;
   signIn: (email: string, password: string) => Promise<string | null>;
   signUp: (email: string, password: string, fullName: string, churchId: string) => Promise<string | null>;
   createProfile: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  enterChurch: (id: string) => void;
+  exitChurch: () => void;
 }
 
 const AuthCtx = createContext<AuthState>(null as unknown as AuthState);
@@ -42,18 +51,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [churchName, setChurchName] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [previewChurchId, setPreviewChurchId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const sb = getClient();
 
   const loadProfile = async (sess: Session | null) => {
-    if (!sess || !sb) { setProfile(null); setChurchName(null); setChurchScope(null); return; }
+    if (!sess || !sb) {
+      setProfile(null); setChurchName(null); setIsAdmin(false);
+      setPreviewChurchId(null); setChurchScope(null); return;
+    }
     const email = sess.user.email || '';
     const { data } = await sb.from('profiles').select('*').eq('email', email).maybeSingle();
     const prof = (data as Profile | undefined) ?? null;
+    const { data: pa } = await sb.rpc('is_platform_admin');
+    const admin = !!pa;
+    const preview = localStorage.getItem(PREVIEW_KEY);
+    const scope = admin && preview ? preview : (prof?.church_id ?? null);
+
     setProfile(prof);
-    setChurchScope(prof?.church_id ?? null);
-    if (prof?.church_id) {
-      fetchChurch(prof.church_id).then((c) => setChurchName(c?.name ?? null)).catch(() => setChurchName(null));
+    setIsAdmin(admin);
+    setPreviewChurchId(admin && preview ? preview : null);
+    setChurchScope(scope);
+    if (scope) {
+      fetchChurch(scope).then((c) => setChurchName(c?.name ?? null)).catch(() => setChurchName(null));
     } else {
       setChurchName(null);
     }
@@ -105,10 +126,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signOut() {
+    localStorage.removeItem(PREVIEW_KEY);
     await sb?.auth.signOut();
   }
 
+  function enterChurch(id: string) {
+    localStorage.setItem(PREVIEW_KEY, id);
+    window.location.reload();
+  }
+
+  function exitChurch() {
+    localStorage.removeItem(PREVIEW_KEY);
+    window.location.reload();
+  }
+
   const rd = profile ? roleDef(profile.role) : ROLES[ROLES.length - 1];
+  const canManageUsers = isAdmin || CHURCH_ADMIN_ROLES.includes(profile?.role || '');
 
   return (
     <AuthCtx.Provider value={{
@@ -116,17 +149,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: session?.user ?? null,
       profile,
       churchName,
-      churchId: profile?.church_id ?? null,
+      churchId: isAdmin && previewChurchId ? previewChurchId : (profile?.church_id ?? null),
       roleLabel: (profile?.role || 'Visitor'),
-      canEdit: rd.canEdit,
-      canPresent: rd.canPresent,
-      canSchedule: rd.canSchedule,
+      canEdit: isAdmin || rd.canEdit,
+      canPresent: isAdmin || rd.canPresent,
+      canSchedule: isAdmin || rd.canSchedule,
+      isAdmin,
+      canManageUsers,
+      previewChurchId,
       ready,
       signIn,
       signUp,
       createProfile,
       signOut,
-      refreshProfile: () => loadProfile(session)
+      refreshProfile: () => loadProfile(session),
+      enterChurch,
+      exitChurch
     }}>
       {children}
     </AuthCtx.Provider>

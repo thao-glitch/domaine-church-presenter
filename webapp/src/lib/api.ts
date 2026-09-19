@@ -92,6 +92,31 @@ export async function setProfileRole(userId: string, role: string): Promise<void
   if (error) throw new Error(error.message);
 }
 
+export async function deleteProfile(userId: string): Promise<void> {
+  const { error } = await db().from('profiles').delete().eq('id', userId);
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteChurch(id: string): Promise<void> {
+  const { error } = await db().from('churches').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+export interface AdminProfile { id: string; email: string; full_name: string | null; role: string; church_id: string | null; created_at: string; }
+
+export async function fetchAllProfiles(): Promise<AdminProfile[]> {
+  const { data, error } = await db().from('profiles')
+    .select('id,email,full_name,role,church_id,created_at').order('created_at', { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data || []) as AdminProfile[];
+}
+
+export async function fetchAdminChurches(): Promise<Church[]> {
+  const { data, error } = await db().from('churches').select('*').order('created_at');
+  if (error) throw new Error(error.message);
+  return (data || []) as Church[];
+}
+
 // ---------------------------------------------------------- members
 export async function fetchMembers(): Promise<Member[]> {
   const { data, error } = await db().from('members').select('*').eq('church_id', churchId()).order('role').order('full_name');

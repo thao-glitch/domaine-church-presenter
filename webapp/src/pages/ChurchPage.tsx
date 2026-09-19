@@ -1,19 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../auth';
 import { Card, Button, Field, Badge, Spinner, Empty } from '../components/ui';
-import { fetchChurch, saveChurch, fetchChurchProfiles, setProfileRole, type Church, type ChurchProfile } from '../lib/api';
+import { fetchChurch, saveChurch, fetchChurchProfiles, setProfileRole, deleteProfile, type Church, type ChurchProfile } from '../lib/api';
 import { ROLES } from '../roles';
 import { useToast } from '../components/toast';
 import { Avatar } from '../components/ui';
 
 export function ChurchPage() {
-  const { profile, churchName, churchId, canEdit } = useAuth();
+  const { profile, churchName, churchId, isAdmin, canManageUsers } = useAuth();
   const toast = useToast();
   const [church, setChurch] = useState<Church | null>(null);
   const [list, setList] = useState<ChurchProfile[] | null>(null);
   const [d, setD] = useState<{ name: string; city: string; country: string; description: string }>({ name: '', city: '', country: '', description: '' });
   const [busy, setBusy] = useState(false);
   const isOwner = !!church && !!profile && church.owner_email === profile.email;
+  const canEditInfo = isOwner || isAdmin || canManageUsers;
 
   useEffect(() => {
     if (!churchId) return;
@@ -50,6 +51,17 @@ export function ChurchPage() {
     }
   }
 
+  async function removeMember(p: ChurchProfile) {
+    if (!confirm(`Remove ${p.full_name || p.email} from this church? They will no longer be able to sign in.`)) return;
+    try {
+      await deleteProfile(p.id);
+      toast(`${p.full_name || p.email} removed.`, 'success');
+      setList((prev) => (prev || []).filter((x) => x.id !== p.id));
+    } catch (e) {
+      toast(e instanceof Error ? e.message : String(e), 'error');
+    }
+  }
+
   return (
     <div className="stack">
       <Card title="Your church">
@@ -61,7 +73,7 @@ export function ChurchPage() {
           </div>
         </div>
         <div className="spacer" />
-        {isOwner ? (
+        {canEditInfo ? (
           <>
             <Field label="Church name"><input value={d.name} onChange={(e) => setD({ ...d, name: e.target.value })} /></Field>
             <Field label="City"><input value={d.city} onChange={(e) => setD({ ...d, city: e.target.value })} /></Field>
@@ -79,7 +91,7 @@ export function ChurchPage() {
         )}
       </Card>
 
-      <Card title={canEdit ? 'Members & roles' : 'Members of this church'}>
+      <Card title={canManageUsers ? 'Members & roles' : 'Members of this church'}>
         {!list ? <Spinner /> : list.length === 0 ? (
           <Empty title="No linked members yet" sub="As people create accounts and choose this church, they appear here." />
         ) : (
@@ -91,10 +103,13 @@ export function ChurchPage() {
                   <div className="list-title">{p.full_name || p.email}</div>
                   <div className="muted small">{p.email}</div>
                 </div>
-                {canEdit && p.id !== profile?.id ? (
-                  <select className="role-select" defaultValue={p.role} onChange={(e) => changeRole(p.id, p.full_name, e.target.value)}>
-                    {ROLES.map((r) => <option key={r.name} value={r.name}>{r.name}</option>)}
-                  </select>
+                {canManageUsers && p.id !== profile?.id ? (
+                  <>
+                    <select className="role-select" defaultValue={p.role} onChange={(e) => changeRole(p.id, p.full_name, e.target.value)}>
+                      {ROLES.map((r) => <option key={r.name} value={r.name}>{r.name}</option>)}
+                    </select>
+                    <Button variant="ghost" onClick={() => removeMember(p)}>Remove</Button>
+                  </>
                 ) : (
                   <Badge tone="success">{p.role}{p.id === profile?.id ? ' (you)' : ''}</Badge>
                 )}

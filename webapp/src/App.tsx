@@ -17,6 +17,7 @@ import { PresenterPage } from './pages/PresenterPage';
 import { StageViewPage } from './pages/StageViewPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { ChurchPage } from './pages/ChurchPage';
+import { PlatformAdminPage } from './pages/PlatformAdminPage';
 
 export function App() {
   return (
@@ -116,7 +117,7 @@ interface NavItem {
 
 function Shell() {
   const hash = useHash();
-  const { roleLabel, canEdit, canPresent, signOut, user, profile, churchName, refreshProfile } = useAuth();
+  const { roleLabel, canEdit, canPresent, isAdmin, previewChurchId, churchName, signOut, user, profile, refreshProfile, exitChurch } = useAuth();
   const missingProfile = !!user && !profile;
 
   const nav: NavItem[] = [
@@ -128,6 +129,7 @@ function Shell() {
     { hash: '/sessions', label: 'Online Sessions', icon: Icon.Video, show: true },
     { hash: '/stage', label: 'Stage (Presenter)', icon: Icon.Stage, show: canPresent },
     { hash: '/church', label: 'Church', icon: Icon.Church, show: canEdit },
+    { hash: '/platform', label: 'Platform Admin', icon: Icon.Shield, show: isAdmin },
     { hash: '/profile', label: 'My profile', icon: Icon.Users, show: true }
   ];
   const visible = nav.filter((n) => n.show);
@@ -154,6 +156,12 @@ function Shell() {
           </Link>
           <button className="icon-btn" onClick={signOut} title="Log out"><Icon.Logout /></button>
         </header>
+        {previewChurchId && (
+          <div className="preview-banner">
+            <span>You are managing <b>{churchName || 'this church'}</b> as platform admin.</span>
+            <Button variant="soft" onClick={exitChurch}>Exit to Platform Admin</Button>
+          </div>
+        )}
         <main className="content">{renderPage(hash)}</main>
       </div>
     </div>
@@ -195,6 +203,7 @@ function renderPage(hash: string): ReactNode {
   if (hash.startsWith('/chat')) return <ChatPage />;
   if (hash.startsWith('/sessions')) return <SessionsPage />;
   if (hash.startsWith('/church')) return <ChurchPage />;
+  if (hash.startsWith('/platform')) return <PlatformAdminPage />;
   if (hash.startsWith('/profile')) return <ProfilePage />;
   if (hash.startsWith('/dashboard')) return <DashboardPage />;
   navigate('/dashboard');
