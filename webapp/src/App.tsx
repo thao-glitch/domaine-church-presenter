@@ -16,6 +16,7 @@ import { SessionsPage } from './pages/SessionsPage';
 import { PresenterPage } from './pages/PresenterPage';
 import { StageViewPage } from './pages/StageViewPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { ChurchPage } from './pages/ChurchPage';
 
 export function App() {
   return (
@@ -115,7 +116,7 @@ interface NavItem {
 
 function Shell() {
   const hash = useHash();
-  const { roleLabel, canEdit, canPresent, signOut, user, profile, refreshProfile } = useAuth();
+  const { roleLabel, canEdit, canPresent, signOut, user, profile, churchName, refreshProfile } = useAuth();
   const missingProfile = !!user && !profile;
 
   const nav: NavItem[] = [
@@ -126,6 +127,7 @@ function Shell() {
     { hash: '/chat', label: 'Chat', icon: Icon.Chat, show: true },
     { hash: '/sessions', label: 'Online Sessions', icon: Icon.Video, show: true },
     { hash: '/stage', label: 'Stage (Presenter)', icon: Icon.Stage, show: canPresent },
+    { hash: '/church', label: 'Church', icon: Icon.Church, show: canEdit },
     { hash: '/profile', label: 'My profile', icon: Icon.Users, show: true }
   ];
   const visible = nav.filter((n) => n.show);
@@ -134,7 +136,7 @@ function Shell() {
 
   return (
     <div className="app">
-      <Sidebar items={visible} active={active.hash} />
+      <Sidebar items={visible} active={active.hash} churchName={churchName} />
       <div className="main">
         <header className="topbar">
           <button className="icon-btn menu-btn" onClick={() => document.body.classList.toggle('nav-open')}>
@@ -158,13 +160,13 @@ function Shell() {
   );
 }
 
-function Sidebar({ items, active }: { items: NavItem[]; active: string }) {
+function Sidebar({ items, active, churchName }: { items: NavItem[]; active: string; churchName: string | null }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
         <div className="splash-logo small">DC</div>
         <div>
-          <div className="brand-name">Domaine Church</div>
+          <div className="brand-name">{churchName || 'Domaine Church'}</div>
           <div className="brand-sub">Family App</div>
         </div>
       </div>
@@ -192,6 +194,7 @@ function renderPage(hash: string): ReactNode {
   if (hash.startsWith('/media')) return <MediaPage />;
   if (hash.startsWith('/chat')) return <ChatPage />;
   if (hash.startsWith('/sessions')) return <SessionsPage />;
+  if (hash.startsWith('/church')) return <ChurchPage />;
   if (hash.startsWith('/profile')) return <ProfilePage />;
   if (hash.startsWith('/dashboard')) return <DashboardPage />;
   navigate('/dashboard');

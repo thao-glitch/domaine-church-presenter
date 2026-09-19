@@ -134,14 +134,50 @@ function RoomMeeting({ session, onClose }: { session: OnlineSession; onClose: ()
   const [localEl, setLocalEl] = useState<HTMLElement | null>(null);
   const [mic, setMic] = useState(true);
   const [cam, setCam] = useState(true);
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+  const [focus, setFocus] = useState<string | null>(null);
   const roomRef = useRef<Room | null>(null);
   const localBoxRef = useRef<HTMLDivElement>(null);
   const tilesRef = useRef<Tile[]>([]);
+  const focusRef = useRef<HTMLDivElement>(null);
 
   const removeTile = useCallback((id: string) => {
     tilesRef.current = tilesRef.current.filter((t) => t.id !== id);
     setTiles([...tilesRef.current]);
   }, []);
+
+  async function loadDevices() {
+    try {
+      if (!navigator.mediaDevices?.enumerateDevices) return;
+      const ds = await navigator.mediaDevices.enumerateDevices();
+      setDevices(ds.filter((d) => d.kind === 'videoinput' && d.deviceId));
+    } catch { /* permissions not granted yet */ }
+  }
+  useEffect(() => { loadDevices(); }, []);
+
+  async function switchCamera(deviceId: string) {
+    const room = roomRef.current;
+    if (!room) return;
+    const pub = room.localParticipant.getTrackPublication(Track.Source.Camera);
+    const track = pub?.track as { restartTrack?: (o: { deviceId: string }) => Promise<void> } | null | undefined;
+    if (!track?.restartTrack) return;
+    setErr('');
+    try {
+      await track.restartTrack({ deviceId });
+    } catch (e) {
+      toast(e instanceof Error ? e.message : String(e), 'error');
+    }
+  }
+
+  function flipCamera() {
+    const ds = devices;
+    if (ds.length < 2) return;
+    const pub = roomRef.current?.localParticipant.getTrackPublication(Track.Source.Camera);
+    const cur = pub?.track?.mediaStreamTrack?.getSettings?.().deviceId;
+    const curIdx = Math.max(0, ds.findIndex((d) => d.deviceId === cur));
+    const next = ds[(curIdx + 1) % ds.length];
+    switchCamera(next.deviceId);
+  }
 
   async function connect() {
     const room = new Room({ adaptiveStream: true, dynacast: true });
@@ -164,7 +200,7 @@ function RoomMeeting({ session, onClose }: { session: OnlineSession; onClose: ()
         setTiles([...tilesRef.current]);
       });
       room.on(RoomEvent.ParticipantDisconnected, (p) => removeTile(p.identity));
-      room.on(RoomEvent.Disconnected, () => { setStatus(status === 'error' ? 'error' : 'error'); onClose(); });
+      room.on(RoomEvent.Disconnected, () => { setStatus('error'); onClose(); });
       await room.connect((await import('../config')).resolveConfig().livekitUrl, token);
       await room.localParticipant.setCameraEnabled(true);
       await room.localParticipant.setMicrophoneEnabled(true);
@@ -174,6 +210,8 @@ function RoomMeeting({ session, onClose }: { session: OnlineSession; onClose: ()
         localBoxRef.current.innerHTML = '';
         localBoxRef.current.appendChild(el);
       }
+      setLocalEl(el || null);
+      loadDevices();
       setStatus('connected');
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
@@ -187,6 +225,20 @@ function RoomMeeting({ session, onClose }: { session: OnlineSession; onClose: ()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const box = focusRef.current;
+    if (!box) return;
+    box.innerHTML = '';
+    if (focus === 'local') {
+      if (localEl) box.appendChild(localEl);
+      else box.appendChild(Object.assign(document.createElement('span'), { className: 'muted', textContent: 'Camera is off.' }));
+    } else if (focus) {
+      const t = tilesRef.current.find((x) => x.id === focus);
+      if (t?.el) box.appendChild(t.el);
+      else box.appendChild(Object.assign(document.createElement('span'), { className: 'muted', textContent: 'Feed ended.' }));
+    }
+  }, [focus, localEl]);
+
   async function toggleMic() {
     const next = !mic; setMic(next);
     await roomRef.current?.localParticipant.setMicrophoneEnabled(next).catch(() => setMic(!next));
@@ -195,6 +247,17 @@ function RoomMeeting({ session, onClose }: { session: OnlineSession; onClose: ()
     const next = !cam; setCam(next);
     await roomRef.current?.localParticipant.setCameraEnabled(next).catch(() => setCam(!next));
   }
+  async function toggleCamPreview() {
+    const wasOff = !cam;
+    await toggleCam();
+    if (wasOff) { setTimeout(loadDevices, 1500); }
+  }
+
+  const currentCam = (() => {
+    const pub = roomRef.current?.localParticipant.getTrackPublication(Track.Source.Camera);
+    return pub?.track?.mediaStreamTrack?.getSettings?.().deviceId || '';
+  })();
+  const camLabel = (id: string, i: number) => (devices[i]?.label || (id === currentCam ? 'Active camera' : `Camera ${i + 1}`));
 
   return (
     <Modal open title={session.title} onClose={onClose}>
@@ -202,22 +265,47 @@ function RoomMeeting({ session, onClose }: { session: OnlineSession; onClose: ()
       {status === 'connecting' && <Spinner label="Joining the session…" />}
       {status === 'connected' && (
         <>
-          <div className="video-grid">
-            <div className="video-tile" ref={localBoxRef}>
-              <span className="video-name">You{localEl ? '' : ' — camera off'}</span>
-            </div>
-            {tiles.map((t) => (
-              <div key={t.id} className="video-tile" ref={(node) => { if (node && t.el && !node.contains(t.el)) node.appendChild(t.el); }}>
-                <span className="video-name">{t.id.split('@')[0]}</span>
+          {focus ? (
+            <div className="video-focus">
+              <div ref={focusRef} className="video-focus-stage" />
+              <div className="meeting-controls">
+                <button className="ctrl leave" onClick={() => setFocus(null)}><Icon.Close size={18} /> Back to grid</button>
               </div>
-            ))}
-            {tiles.length === 0 && <div className="video-tile empty-tile"><span className="muted">Waiting for others…</span></div>}
-          </div>
-          <div className="meeting-controls">
-            <button className={`ctrl ${mic ? '' : 'off'}`} onClick={toggleMic}><Icon.Mic size={18} /></button>
-            <button className={`ctrl ${cam ? '' : 'off'}`} onClick={toggleCam}><Icon.CamOff size={18} /></button>
-            <button className="ctrl leave" onClick={onClose}><Icon.Stop size={18} /> Leave</button>
-          </div>
+            </div>
+          ) : (
+            <>
+              <div className="video-grid">
+                <div className="video-tile" ref={localBoxRef} onClick={() => setFocus('local')}>
+                  <span className="video-name">You{localEl ? '' : ' — camera off'}</span>
+                </div>
+                {tiles.map((t) => (
+                  <div key={t.id} className="video-tile" onClick={() => setFocus(t.id)} ref={(node) => { if (node && t.el && !node.contains(t.el)) node.appendChild(t.el); }}>
+                    <span className="video-name">{t.id.split('@')[0]}</span>
+                  </div>
+                ))}
+                {tiles.length === 0 && <div className="video-tile empty-tile"><span className="muted">Waiting for others…</span></div>}
+              </div>
+              <div className="meeting-controls">
+                <button className={`ctrl ${mic ? '' : 'off'}`} onClick={toggleMic} title="Microphone"><Icon.Mic size={18} /></button>
+                <button className={`ctrl ${cam ? '' : 'off'}`} onClick={toggleCamPreview} title="Camera on/off"><Icon.CamOff size={18} /></button>
+                <button className="ctrl" onClick={flipCamera} title="Switch camera / flip (front ↔ rear / connected device)">
+                  <Icon.CamSwitch size={18} />
+                </button>
+                <select
+                  className="camera-select"
+                  value={currentCam}
+                  onChange={(e) => switchCamera(e.target.value)}
+                  title="Choose a camera — phone front/rear, laptop webcam, HDMI capture card, another live source">
+                  <option value="">Camera: {devices.length ? camLabel(currentCam, 0) : 'auto'}</option>
+                  {devices.map((d, i) => (
+                    <option key={d.deviceId} value={d.deviceId}>{d.label || `Camera ${i + 1}`}</option>
+                  ))}
+                  {devices.length === 0 && <option value="" disabled>No other cameras detected</option>}
+                </select>
+                <button className="ctrl leave" onClick={onClose}><Icon.Stop size={18} /> Leave</button>
+              </div>
+            </>
+          )}
         </>
       )}
       {status === 'error' && (

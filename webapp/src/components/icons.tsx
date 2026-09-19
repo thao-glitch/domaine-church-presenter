@@ -17,7 +17,9 @@ export const Icon = {
   Mic: (p: Svg) => <Svg {...p}><rect x="9" y="2.5" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3.5" /></Svg>,
   CamOff: (p: Svg) => <Svg {...p}><rect x="3" y="6" width="11" height="12" rx="2" /><path d="m14 10 7-4v12l-7-4M3 3l18 18" /></Svg>,
   Send: (p: Svg) => <Svg {...p}><path d="m3 11 18-8-8 18-2.5-7.5L3 11Z" /></Svg>,
-  Stop: (p: Svg) => <Svg {...p}><rect x="6" y="6" width="12" height="12" rx="2" /></Svg>
+  Stop: (p: Svg) => <Svg {...p}><rect x="6" y="6" width="12" height="12" rx="2" /></Svg>,
+  Church: (p: Svg) => <Svg {...p}><path d="M12 3 4 8v13h6v-6h4v6h6V8l-8-5Z" /><path d="M10 8h4M12 6.5V9" /></Svg>,
+  CamSwitch: (p: Svg) => <Svg {...p}><path d="M7 8h10l3 3v3l-8 5V8Z" /><path d="M9 8 8 5h5l-1 3" /></Svg>
 };
 
 interface Svg { size?: number; className?: string; }

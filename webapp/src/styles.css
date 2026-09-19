@@ -305,6 +305,26 @@ h1, h2, h3 { margin: 0; font-weight: 650; }
 }
 .ctrl.off { background: rgba(248,113,113,.16); color: var(--red); }
 .ctrl.leave { border-radius: 999px; width: auto; padding: 0 18px; background: var(--red); color: #fff; border: none; gap: 8px; }
+.camera-select {
+  height: 46px; border-radius: 14px; padding: 0 14px;
+  background: var(--surface-2); color: var(--text); border: 1px solid var(--border);
+  font: inherit; font-size: 13px; max-width: 230px; min-width: 0;
+}
+.video-focus { position: relative; }
+.video-focus-stage {
+  aspect-ratio: 16/9; background: #05070d; border-radius: var(--radius-s);
+  overflow: hidden; display: flex; align-items: center; justify-content: center; margin: 12px 0;
+}
+.video-focus-stage video { width: 100%; height: 100%; object-fit: contain; background: #000; }
+.role-select {
+  padding: 6px 10px; border-radius: 10px; font: inherit; font-size: 13px;
+  background: var(--surface-2); color: var(--text); border: 1px solid var(--border); cursor: pointer;
+}
+.invite-link {
+  width: 100%; padding: 10px 12px; border-radius: 10px; font-family: ui-monospace, monospace; font-size: 12px;
+  background: var(--surface-2); color: var(--text); border: 1px solid var(--border);
+}
+.stack-s { display: flex; flex-direction: column; gap: 8px; }
 
 /* -------- stage / presenter -------- */
 .grid-stage { display: grid; grid-template-columns: minmax(230px, 320px) 1fr; gap: 16px; align-items: start; }

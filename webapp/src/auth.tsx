@@ -3,25 +3,29 @@ import type { ReactNode } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { getClient, isConfigured } from './lib/supabase';
 import { roleDef, ROLES } from './roles';
+import { setChurchScope, fetchChurch } from './lib/api';
 
 export interface Profile {
   id: string;
   email: string;
   full_name: string | null;
   role: string;
+  church_id: string | null;
 }
 
 interface AuthState {
   configuring: boolean;
   user: User | null;
   profile: Profile | null;
+  churchName: string | null;
+  churchId: string | null;
   roleLabel: string;
   canEdit: boolean;
   canPresent: boolean;
   canSchedule: boolean;
   ready: boolean;
   signIn: (email: string, password: string) => Promise<string | null>;
-  signUp: (email: string, password: string, fullName: string) => Promise<string | null>;
+  signUp: (email: string, password: string, fullName: string, churchId: string) => Promise<string | null>;
   createProfile: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -37,15 +41,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [configuring] = useState(!isConfigured('supabase'));
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [churchName, setChurchName] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const sb = getClient();
 
   const loadProfile = async (sess: Session | null) => {
-    if (!sess || !sb) { setProfile(null); return; }
+    if (!sess || !sb) { setProfile(null); setChurchName(null); setChurchScope(null); return; }
     const email = sess.user.email || '';
     const { data } = await sb.from('profiles').select('*').eq('email', email).maybeSingle();
-    if (data) setProfile(data as Profile);
-    else setProfile(null);
+    const prof = (data as Profile | undefined) ?? null;
+    setProfile(prof);
+    setChurchScope(prof?.church_id ?? null);
+    if (prof?.church_id) {
+      fetchChurch(prof.church_id).then((c) => setChurchName(c?.name ?? null)).catch(() => setChurchName(null));
+    } else {
+      setChurchName(null);
+    }
   };
 
   useEffect(() => {
@@ -68,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return error ? error.message : null;
   }
 
-  async function signUp(email: string, password: string, fullName: string): Promise<string | null> {
+  async function signUp(email: string, password: string, fullName: string, churchId: string): Promise<string | null> {
     if (!sb) return 'Not configured.';
     const { error } = await sb.auth.signUp({ email, password });
     if (error) return error.message;
@@ -76,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const usr = (await u).data.user;
     if (usr) {
       await sb.from('profiles').upsert({
-        id: usr.id, email, full_name: fullName, role: 'Member'
+        id: usr.id, email, full_name: fullName, role: 'Member', church_id: churchId
       }, { onConflict: 'id' });
     }
     return null;
@@ -104,6 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       configuring,
       user: session?.user ?? null,
       profile,
+      churchName,
+      churchId: profile?.church_id ?? null,
       roleLabel: (profile?.role || 'Visitor'),
       canEdit: rd.canEdit,
       canPresent: rd.canPresent,
