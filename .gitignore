@@ -1,0 +1,9 @@
+# Build scratch output
+compile_output.txt
+errors.txt
+full_error.txt
+output.txt
+
+# Local Supabase credentials (real values must never be committed)
+supabase.ini
+bin/Debug/supabase.ini
