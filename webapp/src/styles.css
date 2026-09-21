@@ -361,6 +361,30 @@ h1, h2, h3 { margin: 0; font-weight: 650; }
 .feed-body { margin: 8px 0 0; white-space: pre-wrap; line-height: 1.55; }
 .feed-link { display: inline-block; margin-top: 8px; color: var(--accent); font-size: 13px; }
 
+/* -------- launcher (landing between the three apps) -------- */
+.launcher { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 20px; gap: 32px; }
+.launcher-head { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.launcher-head h1 { margin: 8px 0 0; font-size: 30px; letter-spacing: -0.5px; }
+.launcher-head p { margin: 0; }
+.launcher-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; width: 100%; max-width: 1020px; }
+@media (max-width: 860px) { .launcher-grid { grid-template-columns: 1fr; } }
+.launcher-card {
+  display: flex; flex-direction: column; gap: 10px; padding: 24px; border-radius: var(--radius);
+  background: var(--surface); border: 1px solid var(--border); color: var(--text);
+  text-decoration: none; transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.launcher-card:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: 0 18px 40px -24px rgba(0,0,0,.6); }
+.launcher-tag { align-self: flex-start; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #fff; padding: 5px 10px; border-radius: 999px; }
+.launcher-title { font-size: 20px; font-weight: 700; }
+.launcher-desc { color: var(--muted); font-size: 14px; line-height: 1.55; flex: 1; }
+.launcher-go { color: var(--accent); font-weight: 600; font-size: 14px; }
+.launcher-foot { text-align: center; }
+
+/* -------- per-app accents -------- */
+.app-members { --accent: #6d5efc; }
+.app-church { --accent: #f59e0b; }
+.app-admin { --accent: #10b981; }
+
 /* -------- stage / presenter -------- */
 .grid-stage { display: grid; grid-template-columns: minmax(230px, 320px) 1fr; gap: 16px; align-items: start; }
 @media (max-width: 860px) { .grid-stage { grid-template-columns: 1fr; } }

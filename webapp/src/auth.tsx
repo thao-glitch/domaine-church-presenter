@@ -132,12 +132,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function enterChurch(id: string) {
     localStorage.setItem(PREVIEW_KEY, id);
-    window.location.reload();
+    window.location.href = `${import.meta.env.BASE_URL}church/`;
   }
 
   function exitChurch() {
     localStorage.removeItem(PREVIEW_KEY);
-    window.location.reload();
+    window.location.href = `${import.meta.env.BASE_URL}admin/`;
   }
 
   const rd = profile ? roleDef(profile.role) : ROLES[ROLES.length - 1];

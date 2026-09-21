@@ -26,31 +26,54 @@ import { GroupsPage } from './pages/GroupsPage';
 import { GivingPage } from './pages/GivingPage';
 import { RecordingsPage } from './pages/RecordingsPage';
 
-export function App() {
+export type AppVariant = 'members' | 'church' | 'admin';
+
+interface VariantMeta {
+  title: string;
+  brandSub: string;
+  loginTitle: string;
+}
+
+const META: Record<AppVariant, VariantMeta> = {
+  members: { title: 'Domaine Church', brandSub: 'Family App', loginTitle: 'Domaine Church — Family App' },
+  church: { title: 'Church Admin', brandSub: 'Church Console', loginTitle: 'Church Admin Console' },
+  admin: { title: 'Platform Admin', brandSub: 'Platform Console', loginTitle: 'Platform Admin' }
+};
+
+const BASE = import.meta.env.BASE_URL;
+
+export function App({ variant }: { variant: AppVariant }) {
   return (
     <ToastProvider>
       <AuthProvider>
-        <Root />
+        <Root variant={variant} />
       </AuthProvider>
     </ToastProvider>
   );
 }
 
-function Root() {
+function Root({ variant }: { variant: AppVariant }) {
   const { configuring, ready, user } = useAuth();
   if (configuring) return <SetupScreen />;
-  if (!ready) return <Splash />;
+  if (!ready) return <Splash label={META[variant].title} />;
   if (!user) return <LoginPage />;
   const h = window.location.hash.replace(/^#/, '');
   if (h.startsWith('/stage-view/')) return <StageViewPage id={h.split('/')[2]} key={h.split('/')[2]} />;
-  return <Shell />;
+  return <Gate variant={variant} />;
 }
 
-function Splash() {
+function Gate({ variant }: { variant: AppVariant }) {
+  const { isAdmin, canManageUsers, previewChurchId } = useAuth();
+  if (variant === 'admin' && !isAdmin) return <WrongApp variant={variant} />;
+  if (variant === 'church' && !(canManageUsers || (isAdmin && previewChurchId))) return <WrongApp variant={variant} />;
+  return <Shell variant={variant} />;
+}
+
+function Splash({ label = 'Domaine Church' }: { label?: string }) {
   return (
     <div className="splash">
       <div className="splash-logo">DC</div>
-      <Spinner label="Loading Domaine Church…" />
+      <Spinner label={`Loading ${label}…`} />
     </div>
   );
 }
@@ -122,37 +145,56 @@ interface NavItem {
   show: boolean;
 }
 
-function Shell() {
+function Shell({ variant }: { variant: AppVariant }) {
   const hash = useHash();
   const { roleLabel, canEdit, canPresent, isAdmin, previewChurchId, churchName, signOut, user, profile, refreshProfile, exitChurch } = useAuth();
   const missingProfile = !!user && !profile;
 
-  const nav: NavItem[] = [
-    { hash: '/dashboard', label: 'Dashboard', icon: Icon.Home, show: true },
-    { hash: '/feed', label: 'Church Feed', icon: Icon.Chat, show: true },
-    { hash: '/members', label: 'Members', icon: Icon.Users, show: true },
-    { hash: '/groups', label: 'Groups', icon: Icon.Users, show: true },
-    { hash: '/schedule', label: 'Services & Events', icon: Icon.Calendar, show: true },
-    { hash: '/content', label: 'Content Studio', icon: Icon.Upload, show: canEdit },
-    { hash: '/planning', label: 'Planning', icon: Icon.Stage, show: canEdit },
-    { hash: '/attendance', label: 'Attendance', icon: Icon.Users, show: canEdit },
-    { hash: '/media', label: 'Media', icon: Icon.Upload, show: true },
-    { hash: '/archive', label: 'Sermon Archive', icon: Icon.Video, show: true },
-    { hash: '/giving', label: 'Giving', icon: Icon.Calendar, show: true },
-    { hash: '/chat', label: 'Chat', icon: Icon.Chat, show: true },
-    { hash: '/sessions', label: 'Online Sessions', icon: Icon.Video, show: true },
-    { hash: '/stage', label: 'Stage (Presenter)', icon: Icon.Stage, show: canPresent },
-    { hash: '/church', label: 'Church', icon: Icon.Church, show: canEdit },
-    { hash: '/platform', label: 'Platform Admin', icon: Icon.Shield, show: isAdmin },
-    { hash: '/profile', label: 'My profile', icon: Icon.Users, show: true }
-  ];
+  const nav: NavItem[] = variant === 'admin'
+    ? [
+        { hash: '/platform', label: 'Platform Admin', icon: Icon.Shield, show: true },
+        { hash: '/profile', label: 'My profile', icon: Icon.Users, show: true }
+      ]
+    : variant === 'church'
+    ? [
+        { hash: '/dashboard', label: 'Dashboard', icon: Icon.Home, show: true },
+        { hash: '/members', label: 'Members', icon: Icon.Users, show: true },
+        { hash: '/church', label: 'Church Settings', icon: Icon.Church, show: true },
+        { hash: '/content', label: 'Content Studio', icon: Icon.Upload, show: true },
+        { hash: '/planning', label: 'Planning', icon: Icon.Stage, show: true },
+        { hash: '/attendance', label: 'Attendance', icon: Icon.Users, show: true },
+        { hash: '/groups', label: 'Groups', icon: Icon.Users, show: true },
+        { hash: '/schedule', label: 'Services & Events', icon: Icon.Calendar, show: true },
+        { hash: '/giving', label: 'Giving', icon: Icon.Calendar, show: true },
+        { hash: '/media', label: 'Media', icon: Icon.Upload, show: true },
+        { hash: '/archive', label: 'Sermon Archive', icon: Icon.Video, show: true },
+        { hash: '/chat', label: 'Chat', icon: Icon.Chat, show: true },
+        { hash: '/sessions', label: 'Online Sessions', icon: Icon.Video, show: true },
+        { hash: '/stage', label: 'Stage (Presenter)', icon: Icon.Stage, show: canPresent },
+        { hash: '/feed', label: 'Preview Feed', icon: Icon.Chat, show: true },
+        { hash: '/profile', label: 'My profile', icon: Icon.Users, show: true }
+      ]
+    : [
+        { hash: '/dashboard', label: 'Dashboard', icon: Icon.Home, show: true },
+        { hash: '/feed', label: 'Church Feed', icon: Icon.Chat, show: true },
+        { hash: '/members', label: 'Members', icon: Icon.Users, show: true },
+        { hash: '/groups', label: 'Groups', icon: Icon.Users, show: true },
+        { hash: '/schedule', label: 'Services & Events', icon: Icon.Calendar, show: true },
+        { hash: '/media', label: 'Media', icon: Icon.Upload, show: true },
+        { hash: '/archive', label: 'Sermon Archive', icon: Icon.Video, show: true },
+        { hash: '/giving', label: 'My Giving', icon: Icon.Calendar, show: true },
+        { hash: '/chat', label: 'Chat', icon: Icon.Chat, show: true },
+        { hash: '/sessions', label: 'Online Sessions', icon: Icon.Video, show: true },
+        { hash: '/profile', label: 'My profile', icon: Icon.Users, show: true }
+      ];
+
   const visible = nav.filter((n) => n.show);
   const active = visible.find((n) => hash.startsWith(n.hash) || (n.hash === '/dashboard' && hash === '/'))
     ?? visible[0];
 
   return (
-    <div className="app">
-      <Sidebar items={visible} active={active.hash} churchName={churchName} />
+    <div className={`app app-${variant}`}>
+      <Sidebar variant={variant} items={visible} active={active.hash} churchName={churchName} />
       <div className="main">
         <header className="topbar">
           <button className="icon-btn menu-btn" onClick={() => document.body.classList.toggle('nav-open')}>
@@ -160,7 +202,7 @@ function Shell() {
           </button>
           <div className="topbar-title">{active.label}</div>
           <div className="topbar-spacer" />
-          {missingProfile && (
+          {missingProfile && variant !== 'admin' && (
             <Button variant="soft" onClick={() => refreshProfile()}>Attach role to my account</Button>
           )}
           <RoleBadge role={roleLabel} />
@@ -170,26 +212,27 @@ function Shell() {
           </Link>
           <button className="icon-btn" onClick={signOut} title="Log out"><Icon.Logout /></button>
         </header>
-        {previewChurchId && (
+        {previewChurchId && variant === 'church' && (
           <div className="preview-banner">
             <span>You are managing <b>{churchName || 'this church'}</b> as platform admin.</span>
             <Button variant="soft" onClick={exitChurch}>Exit to Platform Admin</Button>
           </div>
         )}
-        <main className="content">{renderPage(hash)}</main>
+        <main className="content">{renderPage(variant, hash)}</main>
       </div>
     </div>
   );
 }
 
-function Sidebar({ items, active, churchName }: { items: NavItem[]; active: string; churchName: string | null }) {
+function Sidebar({ variant, items, active, churchName }: { variant: AppVariant; items: NavItem[]; active: string; churchName: string | null }) {
+  const brand = variant === 'admin' ? 'Platform' : variant === 'church' ? (churchName || 'Church Admin') : (churchName || 'Domaine Church');
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <div className="splash-logo small">DC</div>
+        <div className="splash-logo small">{variant === 'admin' ? 'PA' : 'DC'}</div>
         <div>
-          <div className="brand-name">{churchName || 'Domaine Church'}</div>
-          <div className="brand-sub">Family App</div>
+          <div className="brand-name">{brand}</div>
+          <div className="brand-sub">{META[variant].brandSub}</div>
         </div>
       </div>
       <nav className="side-nav">
@@ -202,14 +245,63 @@ function Sidebar({ items, active, churchName }: { items: NavItem[]; active: stri
         ))}
       </nav>
       <div className="side-foot">
-        <div className="side-foot-text">Log in shows what your role can manage.</div>
-        <Button variant="ghost" className="w-full"><Icon.Users size={16} /> Community</Button>
+        {variant === 'admin' ? (
+          <>
+            <div className="side-foot-text">Open another app:</div>
+            <a className="side-item" href={`${BASE}church/`}><Icon.Church size={19} /><span>Church Console</span></a>
+            <a className="side-item" href={`${BASE}members/`}><Icon.Users size={19} /><span>Family App</span></a>
+          </>
+        ) : variant === 'church' ? (
+          <>
+            <div className="side-foot-text">Switch app:</div>
+            <a className="side-item" href={`${BASE}members/`}><Icon.Users size={19} /><span>Family App</span></a>
+          </>
+        ) : (
+          <div className="side-foot-text">You're in the church family app.</div>
+        )}
       </div>
     </aside>
   );
 }
 
-function renderPage(hash: string): ReactNode {
+function WrongApp({ variant }: { variant: AppVariant }) {
+  const { signOut, roleLabel } = useAuth();
+  const isAdminApp = variant === 'admin';
+  return (
+    <div className="setup-wrap">
+      <div className="card setup-card">
+        <header className="card-head">
+          <h2 className="card-title">{META[variant].title}</h2>
+        </header>
+        <p className="muted">
+          This is the <b>{META[variant].loginTitle}</b>, but your account is not allowed here
+          (role: <b>{roleLabel}</b>).
+        </p>
+        <div className="card-actions" style={{ flexWrap: 'wrap', gap: 8 }}>
+          {isAdminApp ? (
+            <>
+              <Button onClick={() => { window.location.href = `${BASE}church/`; }}>Open Church Console</Button>
+              <Button variant="soft" onClick={() => { window.location.href = `${BASE}members/`; }}>Open Family App</Button>
+            </>
+          ) : (
+            <>
+              <Button onClick={() => { window.location.href = `${BASE}members/`; }}>Go to Family App</Button>
+              <Button variant="soft" onClick={() => { window.location.href = `${BASE}admin/`; }}>Open Platform Admin</Button>
+            </>
+          )}
+          <Button variant="ghost" onClick={signOut}>Log out</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function renderPage(variant: AppVariant, hash: string): ReactNode {
+  if (variant === 'admin') {
+    if (hash.startsWith('/profile')) return <ProfilePage />;
+    if (!hash.startsWith('/platform')) { navigate('/platform'); return <Splash label="Platform Admin" />; }
+    return <PlatformAdminPage />;
+  }
   if (hash.startsWith('/stage')) return <PresenterPage />;
   if (hash.startsWith('/feed')) return <FeedPage />;
   if (hash.startsWith('/content')) return <ContentPage />;

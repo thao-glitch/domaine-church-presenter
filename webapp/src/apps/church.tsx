@@ -1,9 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { Launcher } from './Launcher';
+import { App } from '../App';
+import '../styles.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <Launcher />
+    <App variant="church" />
   </React.StrictMode>
 );
