@@ -6,6 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/copy-docs.mjs",
+    "build:members": "set APP=members&& vite build",
+    "build:church": "set APP=church&& vite build",
+    "build:admin": "set APP=admin&& vite build",
+    "deploy:members": "npm run build:members && node scripts/deploy-pages.mjs members",
+    "deploy:church": "npm run build:church && node scripts/deploy-pages.mjs church",
+    "deploy:admin": "npm run build:admin && node scripts/deploy-pages.mjs admin",
     "preview": "vite preview"
   },
   "dependencies": {

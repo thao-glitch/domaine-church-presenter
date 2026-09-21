@@ -1,8 +1,6 @@
-import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { AuthProvider, useAuth } from './auth';
 import { ToastProvider } from './components/toast';
-import { saveConfig, resolveConfig } from './config';
 import { useHash, navigate, Link } from './lib/router';
 import { Button, Avatar, RoleBadge, Spinner } from './components/ui';
 import { Icon } from './components/icons';
@@ -35,12 +33,17 @@ interface VariantMeta {
 }
 
 const META: Record<AppVariant, VariantMeta> = {
-  members: { title: 'Domaine Church', brandSub: 'Family App', loginTitle: 'Domaine Church — Family App' },
+  members: { title: 'Church Members', brandSub: 'Church Members', loginTitle: 'Church Members' },
   church: { title: 'Church Admin', brandSub: 'Church Console', loginTitle: 'Church Admin Console' },
   admin: { title: 'Platform Admin', brandSub: 'Platform Console', loginTitle: 'Platform Admin' }
 };
 
-const BASE = import.meta.env.BASE_URL;
+// Each app has its own deployed GitHub Pages project.
+const PROJECTS: Record<AppVariant, string> = {
+  members: 'https://thao-glitch.github.io/domaine-church-members/',
+  church: 'https://thao-glitch.github.io/domaine-church-console/',
+  admin: 'https://thao-glitch.github.io/domaine-church-admin/'
+};
 
 export function App({ variant }: { variant: AppVariant }) {
   return (
@@ -53,8 +56,7 @@ export function App({ variant }: { variant: AppVariant }) {
 }
 
 function Root({ variant }: { variant: AppVariant }) {
-  const { configuring, ready, user } = useAuth();
-  if (configuring) return <SetupScreen />;
+  const { ready, user } = useAuth();
   if (!ready) return <Splash label={META[variant].title} />;
   if (!user) return <LoginPage />;
   const h = window.location.hash.replace(/^#/, '');
@@ -79,15 +81,6 @@ function Splash({ label = 'Domaine Church' }: { label?: string }) {
 }
 
 function SetupScreen() {
-  const [cfg, setCfg] = useState(() => ({ ...resolveConfig() }));
-  const [saved, setSaved] = useState(false);
-
-  const save = () => {
-    saveConfig({ ...cfg, name: cfg.name || 'Domaine Church' });
-    setSaved(true);
-    setTimeout(() => window.location.reload(), 700);
-  };
-
   return (
     <div className="setup-wrap">
       <div className="card setup-card">
@@ -95,44 +88,9 @@ function SetupScreen() {
           <h2 className="card-title">First-time setup</h2>
         </header>
         <p className="muted">
-          This app connects to your church's <b>Supabase</b> project (login, members,
-          services, media, chat) and a <b>LiveKit</b> server (online video sessions).
+          Missing configuration. See <b>docs/supabase/LIVEKIT.md</b> and set values in
+          <code> webapp/src/config.ts </code> before building.
         </p>
-        <label className="field">
-          <span className="field-label">App name</span>
-          <input value={cfg.name} onChange={(e) => setCfg({ ...cfg, name: e.target.value })} />
-        </label>
-        <label className="field">
-          <span className="field-label">Supabase project URL</span>
-          <input value={cfg.supabaseUrl} onChange={(e) => setCfg({ ...cfg, supabaseUrl: e.target.value })} />
-        </label>
-        <label className="field">
-          <span className="field-label">Supabase anon (public) key</span>
-          <input value={cfg.supabaseKey} onChange={(e) => setCfg({ ...cfg, supabaseKey: e.target.value })} />
-        </label>
-        <label className="field">
-          <span className="field-label">LiveKit server URL</span>
-          <input value={cfg.livekitUrl} onChange={(e) => setCfg({ ...cfg, livekitUrl: e.target.value })} />
-        </label>
-        <label className="field">
-          <span className="field-label">LiveKit token endpoint (Supabase Edge Function)</span>
-          <input value={cfg.livekitTokenUrl} onChange={(e) => setCfg({ ...cfg, livekitTokenUrl: e.target.value })} />
-        </label>
-        <div className="card-actions">
-          <Button onClick={save}>Save and reload</Button>
-        </div>
-        {saved && (
-          <p className="ok">
-            Saved — reloading…<br />
-            <b>Next screen:</b> create your church account (email + password) on the
-            login page, then you're in.
-          </p>
-        )}
-        <div className="setup-note">
-          Get URL + key from Supabase → <i>Project Settings → API</i>. Deploy the token
-          function by following <b>docs/supabase/LIVEKIT.md</b>. Values only ever live in
-          your own browser.
-        </div>
       </div>
     </div>
   );
@@ -248,16 +206,16 @@ function Sidebar({ variant, items, active, churchName }: { variant: AppVariant; 
         {variant === 'admin' ? (
           <>
             <div className="side-foot-text">Open another app:</div>
-            <a className="side-item" href={`${BASE}church/`}><Icon.Church size={19} /><span>Church Console</span></a>
-            <a className="side-item" href={`${BASE}members/`}><Icon.Users size={19} /><span>Family App</span></a>
+            <a className="side-item" href={PROJECTS.church}><Icon.Church size={19} /><span>Church Console</span></a>
+            <a className="side-item" href={PROJECTS.members}><Icon.Users size={19} /><span>Church Members</span></a>
           </>
         ) : variant === 'church' ? (
           <>
             <div className="side-foot-text">Switch app:</div>
-            <a className="side-item" href={`${BASE}members/`}><Icon.Users size={19} /><span>Family App</span></a>
+            <a className="side-item" href={PROJECTS.members}><Icon.Users size={19} /><span>Church Members</span></a>
           </>
         ) : (
-          <div className="side-foot-text">You're in the church family app.</div>
+          <div className="side-foot-text">You're in the members app.</div>
         )}
       </div>
     </aside>
@@ -280,13 +238,13 @@ function WrongApp({ variant }: { variant: AppVariant }) {
         <div className="card-actions" style={{ flexWrap: 'wrap', gap: 8 }}>
           {isAdminApp ? (
             <>
-              <Button onClick={() => { window.location.href = `${BASE}church/`; }}>Open Church Console</Button>
-              <Button variant="soft" onClick={() => { window.location.href = `${BASE}members/`; }}>Open Family App</Button>
+              <Button onClick={() => { window.location.href = PROJECTS.church; }}>Open Church Console</Button>
+              <Button variant="soft" onClick={() => { window.location.href = PROJECTS.members; }}>Open Church Members</Button>
             </>
           ) : (
             <>
-              <Button onClick={() => { window.location.href = `${BASE}members/`; }}>Go to Family App</Button>
-              <Button variant="soft" onClick={() => { window.location.href = `${BASE}admin/`; }}>Open Platform Admin</Button>
+              <Button onClick={() => { window.location.href = PROJECTS.members; }}>Go to Church Members</Button>
+              <Button variant="soft" onClick={() => { window.location.href = PROJECTS.admin; }}>Open Platform Admin</Button>
             </>
           )}
           <Button variant="ghost" onClick={signOut}>Log out</Button>

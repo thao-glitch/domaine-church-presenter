@@ -1,24 +1,29 @@
 import './styles.css';
 
-const BASE = import.meta.env.BASE_URL;
+// Each app lives in its own deployed GitHub Pages project.
+const PROJECTS = {
+  members: 'https://thao-glitch.github.io/domaine-church-members/',
+  church: 'https://thao-glitch.github.io/domaine-church-console/',
+  admin: 'https://thao-glitch.github.io/domaine-church-admin/'
+};
 
 const APPS = [
   {
-    href: `${BASE}members/`,
-    tag: 'Family App',
-    title: 'Church Family',
-    desc: 'Sunday feed, devotions, prayers, groups, giving, services, media and online sessions — for every member.',
+    href: PROJECTS.members,
+    tag: 'Church Members',
+    title: 'Church Members',
+    desc: 'Feed, devotions, prayers, groups, giving, services, media and online sessions — for every member.',
     accent: 'linear-gradient(135deg, #6d5efc, #38bdf8)'
   },
   {
-    href: `${BASE}church/`,
+    href: PROJECTS.church,
     tag: 'Church Console',
     title: 'Church Admin',
     desc: 'Leaders manage members, content, service planning, attendance, groups and giving for their own church.',
     accent: 'linear-gradient(135deg, #f59e0b, #ef4444)'
   },
   {
-    href: `${BASE}admin/`,
+    href: PROJECTS.admin,
     tag: 'Platform Console',
     title: 'Platform Admin',
     desc: 'Oversee every church, all accounts, publish global content and view cross-church analytics.',
@@ -32,7 +37,7 @@ export function Launcher() {
       <header className="launcher-head">
         <div className="splash-logo">DC</div>
         <h1>Domaine Church</h1>
-        <p className="muted">One church family, three focused apps. Choose where you're going.</p>
+        <p className="muted">Three focused apps. Choose where you're going.</p>
       </header>
       <div className="launcher-grid">
         {APPS.map((a) => (

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
-import { getClient, isConfigured } from './lib/supabase';
+import { getClient } from './lib/supabase';
 import { roleDef, ROLES } from './roles';
 import { setChurchScope, fetchChurch } from './lib/api';
 
@@ -47,7 +47,7 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [configuring] = useState(!isConfigured('supabase'));
+  const configuring = false;
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [churchName, setChurchName] = useState<string | null>(null);
@@ -132,12 +132,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function enterChurch(id: string) {
     localStorage.setItem(PREVIEW_KEY, id);
-    window.location.href = `${import.meta.env.BASE_URL}church/`;
+    window.location.href = 'https://thao-glitch.github.io/domaine-church-console/';
   }
 
   function exitChurch() {
     localStorage.removeItem(PREVIEW_KEY);
-    window.location.href = `${import.meta.env.BASE_URL}admin/`;
+    window.location.href = 'https://thao-glitch.github.io/domaine-church-admin/';
   }
 
   const rd = profile ? roleDef(profile.role) : ROLES[ROLES.length - 1];

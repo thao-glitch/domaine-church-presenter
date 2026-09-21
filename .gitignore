@@ -11,6 +11,11 @@ bin/Debug/supabase.ini
 # Web app dependencies
 webapp/node_modules/
 
+# Standalone per-app build output (deployed to their own repos)
+webapp/dist-members/
+webapp/dist-church/
+webapp/dist-admin/
+
 # Supabase CLI local state
 supabase/.temp/
 supabase/.branches/
