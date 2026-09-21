@@ -3,7 +3,7 @@ import { useAuth } from '../auth';
 import { Button, Field } from '../components/ui';
 import { fetchChurches, registerChurch, type Church } from '../lib/api';
 
-export function LoginPage({ appName = 'Church Members', appTag = 'Church Members' }: { appName?: string; appTag?: string }) {
+export function LoginPage({ appName = 'Church Members', appTag = 'Church Members', allowSignup = true }: { appName?: string; appTag?: string; allowSignup?: boolean }) {
   const { signIn, signUp, createProfile } = useAuth();
   const [mode, setMode] = useState<'in' | 'up'>('in');
   const [email, setEmail] = useState('');
@@ -71,7 +71,7 @@ export function LoginPage({ appName = 'Church Members', appTag = 'Church Members
 
         <div className="auth-tabs">
           <button className={mode === 'in' ? 'active' : ''} onClick={() => { setMode('in'); setError(null); }}>Log in</button>
-          <button className={mode === 'up' ? 'active' : ''} onClick={() => { setMode('up'); setError(null); }}>Create account</button>
+          {allowSignup && <button className={mode === 'up' ? 'active' : ''} onClick={() => { setMode('up'); setError(null); }}>Create account</button>}
         </div>
 
         <div className="auth-form">
@@ -99,7 +99,7 @@ export function LoginPage({ appName = 'Church Members', appTag = 'Church Members
             </>
           )}
           <Field label="Email">
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={allowSignup ? 'you@example.com' : 'johnkamonyegitau@gmail.com'} />
           </Field>
           <Field label="Password">
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
@@ -109,8 +109,9 @@ export function LoginPage({ appName = 'Church Members', appTag = 'Church Members
             {busy ? 'Please wait…' : mode === 'in' ? 'Log in' : 'Create account'}
           </Button>
           <p className="auth-note muted">
-            New members start as <b>Member</b>. Registering a new church makes you its
-            <b> Church Admin</b> automatically. Everyone only sees their own church.
+            {allowSignup
+              ? <>New members start as <b>Member</b>. Registering a new church makes you its <b>Church Admin</b> automatically. Everyone only sees their own church.</>
+              : <>This is the single, secure <b>Platform Admin</b> account managed by Domaine. All churches, their admins and members are monitored from here.</>}
           </p>
         </div>
       </div>

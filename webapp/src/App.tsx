@@ -62,7 +62,7 @@ function Root({ variant }: { variant: AppVariant }) {
     document.title = `${META[variant].title} — Domaine Church`;
   }, [variant]);
   if (!ready) return <Splash label={META[variant].title} />;
-  if (!user) return <LoginPage appName={META[variant].title} appTag={META[variant].brandSub} />;
+  if (!user) return <LoginPage appName={META[variant].title} appTag={META[variant].brandSub} allowSignup={variant !== 'admin'} />;
   const h = window.location.hash.replace(/^#/, '');
   if (h.startsWith('/stage-view/')) return <StageViewPage id={h.split('/')[2]} key={h.split('/')[2]} />;
   return <Gate variant={variant} />;
