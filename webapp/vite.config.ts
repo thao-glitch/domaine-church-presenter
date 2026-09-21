@@ -14,8 +14,8 @@ const REPO_OF = {
 const app = (process.env.APP || '') as keyof typeof REPO_OF;
 
 export default defineConfig({
-  // Standalone apps get their own site path; the source-preview build keeps the
-  // multi-page layout in this repo at /domaine-church-presenter/.
+  // Standalone apps get their own site path; the root build serves the
+  // Members app directly in this repo at /domaine-church-presenter/.
   base: app ? `/${REPO_OF[app]}/` : '/domaine-church-presenter/',
   plugins: [react()],
   build: {
@@ -27,8 +27,8 @@ export default defineConfig({
       ? { input: { [app]: page(`./${app}/index.html`) } }
       : {
           input: {
-            launcher: page('./index.html'),
-            members: page('./members/index.html'),
+            members: page('./index.html'),
+            'members-sub': page('./members/index.html'),
             church: page('./church/index.html'),
             admin: page('./admin/index.html')
           }
