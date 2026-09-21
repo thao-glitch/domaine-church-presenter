@@ -4,6 +4,7 @@ import { Card, Button, Modal, Field, Badge, Spinner, Empty } from '../components
 import { Icon } from '../components/icons';
 import {
   fetchAdminChurches, fetchAllProfiles, deleteChurch, deleteProfile, setProfileRole,
+  adminCreateUser, adminCreateChurch,
   type Church, type AdminProfile
 } from '../lib/api';
 import {
@@ -24,6 +25,10 @@ export function PlatformAdminPage() {
   const [stats, setStats] = useState<{ sessions: number; prayers: number; giving: number; recordings: number } | null>(null);
   const [gModal, setGModal] = useState<Partial<ContentItem> | null>(null);
   const [busy, setBusy] = useState(false);
+  const [churchForm, setChurchForm] = useState(false);
+  const [userForm, setUserForm] = useState(false);
+  const [nf, setNf] = useState({ name: '', city: '', country: '', description: '', contact_email: '', owner_email: '', owner_name: '' });
+  const [uf, setUf] = useState({ email: '', password: '', full_name: '', role: 'Church Admin', church_id: '' });
 
   function load() {
     fetchAdminChurches().then(setChurches).catch((e) => toast(String(e), 'error'));
@@ -92,6 +97,30 @@ export function PlatformAdminPage() {
     }
   }
 
+  async function createChurch() {
+    if (!nf.name.trim()) return;
+    setBusy(true);
+    try {
+      await adminCreateChurch(nf);
+      toast(`"${nf.name.trim()}" registered.`, 'success');
+      setChurchForm(false); setNf({ name: '', city: '', country: '', description: '', contact_email: '', owner_email: '', owner_name: '' });
+      load();
+    } catch (e) { toast(e instanceof Error ? e.message : String(e), 'error'); }
+    finally { setBusy(false); }
+  }
+
+  async function createUser() {
+    if (!uf.email.trim() || !uf.full_name.trim() || !uf.password || !uf.church_id) return;
+    setBusy(true);
+    try {
+      await adminCreateUser(uf);
+      toast(`Account created for ${uf.email.trim()} as ${uf.role}.`, 'success');
+      setUserForm(false); setUf({ email: '', password: '', full_name: '', role: 'Church Admin', church_id: '' });
+      load();
+    } catch (e) { toast(e instanceof Error ? e.message : String(e), 'error'); }
+    finally { setBusy(false); }
+  }
+
   if (!isAdmin) {
     return <Empty title="Platform admins only" sub="This area is restricted to the overall administrator." />;
   }
@@ -130,7 +159,8 @@ export function PlatformAdminPage() {
         )}
       </Card>
 
-      <Card title="Churches">
+      <Card title="Churches"
+        actions={<Button onClick={() => setChurchForm(true)}><Icon.Plus size={16} /> Register church</Button>}>
         {!churches ? <Spinner /> : churches.length === 0 ? (
           <Empty title="No churches yet" sub="Churches appear here as they register from the sign-up screen." />
         ) : (
@@ -152,7 +182,8 @@ export function PlatformAdminPage() {
         )}
       </Card>
 
-      <Card title="All accounts">
+      <Card title="All accounts"
+        actions={<Button onClick={() => setUserForm(true)}><Icon.Plus size={16} /> Add account</Button>}>
         {!people ? <Spinner /> : people.length === 0 ? (
           <Empty title="No accounts yet" sub="People appear here after they create an account." />
         ) : (
@@ -189,6 +220,43 @@ export function PlatformAdminPage() {
         <Field label="Title"><input value={gModal?.title || ''} onChange={(e) => setGModal({ ...(gModal as object), title: e.target.value })} /></Field>
         <Field label="Message"><textarea rows={5} value={gModal?.body || ''} onChange={(e) => setGModal({ ...(gModal as object), body: e.target.value })} /></Field>
         <Field label="Link (optional)"><input value={gModal?.link_url || ''} onChange={(e) => setGModal({ ...(gModal as object), link_url: e.target.value })} /></Field>
+      </Modal>
+
+      <Modal open={churchForm} title="Register a church" onClose={() => setChurchForm(false)}
+        footer={<><Button variant="ghost" onClick={() => setChurchForm(false)}>Cancel</Button><Button disabled={busy || !nf.name.trim()} onClick={createChurch}>{busy ? 'Saving…' : 'Register church'}</Button></>}>
+        <p className="muted small">After registering, add its first admin from the accounts card.</p>
+        <Field label="Church name"><input value={nf.name} onChange={(e) => setNf({ ...nf, name: e.target.value })} placeholder="e.g. Good Shepherd Assembly" /></Field>
+        <div className="grid-2">
+          <Field label="City"><input value={nf.city} onChange={(e) => setNf({ ...nf, city: e.target.value })} placeholder="optional" /></Field>
+          <Field label="Country"><input value={nf.country} onChange={(e) => setNf({ ...nf, country: e.target.value })} placeholder="optional" /></Field>
+        </div>
+        <Field label="About"><textarea rows={3} value={nf.description} onChange={(e) => setNf({ ...nf, description: e.target.value })} placeholder="optional" /></Field>
+        <div className="grid-2">
+          <Field label="Contact email"><input value={nf.contact_email} onChange={(e) => setNf({ ...nf, contact_email: e.target.value })} placeholder="optional" /></Field>
+          <Field label="Owner email"><input value={nf.owner_email} onChange={(e) => setNf({ ...nf, owner_email: e.target.value })} placeholder="optional" /></Field>
+        </div>
+        <Field label="Owner name"><input value={nf.owner_name} onChange={(e) => setNf({ ...nf, owner_name: e.target.value })} placeholder="optional" /></Field>
+      </Modal>
+
+      <Modal open={userForm} title="Add an account" onClose={() => setUserForm(false)}
+        footer={<><Button variant="ghost" onClick={() => setUserForm(false)}>Cancel</Button><Button disabled={busy || !uf.email.trim() || !uf.full_name.trim() || !uf.password || !uf.church_id} onClick={createUser}>{busy ? 'Saving…' : 'Create account'}</Button></>}>
+        <p className="muted small">Creates a fully activated sign-in (no confirmation email needed).</p>
+        <Field label="Full name"><input value={uf.full_name} onChange={(e) => setUf({ ...uf, full_name: e.target.value })} /></Field>
+        <Field label="Email"><input type="email" value={uf.email} onChange={(e) => setUf({ ...uf, email: e.target.value })} /></Field>
+        <Field label="Password"><input type="password" value={uf.password} onChange={(e) => setUf({ ...uf, password: e.target.value })} /></Field>
+        <div className="grid-2">
+          <Field label="Church">
+            <select value={uf.church_id} onChange={(e) => setUf({ ...uf, church_id: e.target.value })}>
+              <option value="">Select church…</option>
+              {(churches || []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </Field>
+          <Field label="Role">
+            <select value={uf.role} onChange={(e) => setUf({ ...uf, role: e.target.value })}>
+              {ROLES.map((r) => <option key={r.name} value={r.name}>{r.name}</option>)}
+            </select>
+          </Field>
+        </div>
       </Modal>
     </div>
   );

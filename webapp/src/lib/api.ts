@@ -104,6 +104,30 @@ export async function deleteChurch(id: string): Promise<void> {
 
 export interface AdminProfile { id: string; email: string; full_name: string | null; role: string; church_id: string | null; created_at: string; }
 
+export async function adminCreateUser(input: {
+  email: string; password: string; full_name: string; role: string; church_id: string;
+}): Promise<string> {
+  const { data, error } = await db().rpc('admin_create_user', {
+    v_email: input.email.trim(), v_password: input.password,
+    v_full_name: input.full_name.trim(), v_role: input.role, v_church_id: input.church_id
+  });
+  if (error) throw new Error(error.message);
+  return data as string;
+}
+
+export async function adminCreateChurch(input: {
+  name: string; city?: string; country?: string; description?: string;
+  contact_email?: string; owner_email?: string; owner_name?: string;
+}): Promise<string> {
+  const { data, error } = await db().rpc('admin_create_church', {
+    v_name: input.name.trim(), v_city: input.city || null, v_country: input.country || null,
+    v_description: input.description || null, v_contact_email: input.contact_email || null,
+    v_owner_email: input.owner_email || null, v_owner_name: input.owner_name || null
+  });
+  if (error) throw new Error(error.message);
+  return data as string;
+}
+
 export async function fetchAllProfiles(): Promise<AdminProfile[]> {
   const { data, error } = await db().from('profiles')
     .select('id,email,full_name,role,church_id,created_at').order('created_at', { ascending: false });

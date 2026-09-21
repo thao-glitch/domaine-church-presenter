@@ -69,9 +69,11 @@ function Root({ variant }: { variant: AppVariant }) {
 }
 
 function Gate({ variant }: { variant: AppVariant }) {
-  const { isAdmin, canManageUsers, previewChurchId } = useAuth();
+  const { isAdmin, canManageUsers, previewChurchId, profile } = useAuth();
+  const hasScope = !!(previewChurchId || profile?.church_id);
   if (variant === 'admin' && !isAdmin) return <WrongApp variant={variant} />;
   if (variant === 'church' && !(canManageUsers || (isAdmin && previewChurchId))) return <WrongApp variant={variant} />;
+  if (variant !== 'admin' && isAdmin && !hasScope) return <AdminNoScope />;
   return <Shell variant={variant} />;
 }
 
@@ -223,6 +225,28 @@ function Sidebar({ variant, items, active, churchName }: { variant: AppVariant; 
         )}
       </div>
     </aside>
+  );
+}
+
+function AdminNoScope() {
+  const { signOut } = useAuth();
+  return (
+    <div className="setup-wrap">
+      <div className="card setup-card">
+        <header className="card-head">
+          <h2 className="card-title">Platform Admin</h2>
+        </header>
+        <p className="muted">
+          You're the overall administrator and oversee every church — you don't need to be a
+          member of any. Go to the <b>Platform Admin</b> console to register churches, create
+          accounts and church admins, or use <b>Manage this church</b> to preview any church.
+        </p>
+        <div className="card-actions" style={{ flexWrap: 'wrap', gap: 8 }}>
+          <Button onClick={() => { window.location.href = PROJECTS.admin; }}>Open Platform Admin</Button>
+          <Button variant="ghost" onClick={signOut}>Log out</Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
