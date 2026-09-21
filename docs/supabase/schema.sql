@@ -1,7 +1,7 @@
 ﻿-- ============================================================
 -- Domaine Church: full Supabase schema (baseline)
 -- ------------------------------------------------------------
--- Generated from supabase/migrations/*.sql (0001 -> 0004).
+-- Generated from supabase/migrations/*.sql (0001 -> 0005).
 -- Fresh install: run this whole file once in the SQL editor.
 -- ============================================================
 
@@ -1086,3 +1086,18 @@ do $$ begin
     alter publication supabase_realtime add table public.attendance;
   end if;
 end $$;
+
+
+-- ============================================================
+-- Domaine Church â€” public church directory
+-- ------------------------------------------------------------
+-- The register-church flow inserts a church BEFORE the account
+-- is created (anonymous user). The INSERT passed (check true),
+-- but the RETURNING SELECT was filtered by churches_select
+-- (auth.uid() must be non-null), so PostgREST reported
+-- "new row violates RLS policy". Churches are a public
+-- directory, so make the directory readable by anyone.
+-- ============================================================
+
+drop policy if exists "churches_select" on public.churches;
+create policy "churches_select" on public.churches for select using (true);
