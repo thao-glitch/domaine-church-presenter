@@ -61,36 +61,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null); setChurchName(null); setIsAdmin(false);
       setPreviewChurchId(null); setChurchScope(null); return;
     }
-    const email = sess.user.email || '';
-    const { data } = await sb.from('profiles').select('*').eq('email', email).maybeSingle();
-    const prof = (data as Profile | undefined) ?? null;
-    const { data: pa } = await sb.rpc('is_platform_admin');
-    const admin = !!pa;
-    const preview = localStorage.getItem(PREVIEW_KEY);
-    const scope = admin && preview ? preview : (prof?.church_id ?? null);
+    try {
+      const email = sess.user.email || '';
+      const { data } = await sb.from('profiles').select('*').eq('email', email).maybeSingle();
+      const prof = (data as Profile | undefined) ?? null;
+      const { data: pa } = await sb.rpc('is_platform_admin');
+      const admin = !!pa;
+      const preview = localStorage.getItem(PREVIEW_KEY);
+      const scope = admin && preview ? preview : (prof?.church_id ?? null);
 
-    setProfile(prof);
-    setIsAdmin(admin);
-    setPreviewChurchId(admin && preview ? preview : null);
-    setChurchScope(scope);
-    if (scope) {
-      fetchChurch(scope).then((c) => setChurchName(c?.name ?? null)).catch(() => setChurchName(null));
-    } else {
-      setChurchName(null);
+      setProfile(prof);
+      setIsAdmin(admin);
+      setPreviewChurchId(admin && preview ? preview : null);
+      setChurchScope(scope);
+      if (scope) {
+        fetchChurch(scope).then((c) => setChurchName(c?.name ?? null)).catch(() => setChurchName(null));
+      } else {
+        setChurchName(null);
+      }
+    } catch {
+      setProfile(null); setChurchName(null); setIsAdmin(false);
+      setPreviewChurchId(null); setChurchScope(null);
     }
   };
 
   useEffect(() => {
     if (!sb) { setReady(true); return; }
-    sb.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      loadProfile(data.session).then(() => setReady(true));
-    });
+    // Never leave the splash spinning forever (slow/blocked server, restored session).
+    const failsafe = setTimeout(() => setReady(true), 12_000);
+    sb.auth.getSession()
+      .then(({ data }) => {
+        setSession(data.session);
+        return loadProfile(data.session);
+      })
+      .catch(() => {})
+      .finally(() => { clearTimeout(failsafe); setReady(true); });
     const { data: sub } = sb.auth.onAuthStateChange((_event, sess) => {
       setSession(sess);
-      loadProfile(sess);
+      loadProfile(sess).catch(() => {});
     });
-    return () => sub.subscription.unsubscribe();
+    return () => { clearTimeout(failsafe); sub.subscription.unsubscribe(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
