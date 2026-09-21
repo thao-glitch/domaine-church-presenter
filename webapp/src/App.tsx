@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { AuthProvider, useAuth } from './auth';
 import { ToastProvider } from './components/toast';
@@ -57,8 +58,11 @@ export function App({ variant }: { variant: AppVariant }) {
 
 function Root({ variant }: { variant: AppVariant }) {
   const { ready, user } = useAuth();
+  useEffect(() => {
+    document.title = `${META[variant].title} — Domaine Church`;
+  }, [variant]);
   if (!ready) return <Splash label={META[variant].title} />;
-  if (!user) return <LoginPage />;
+  if (!user) return <LoginPage appName={META[variant].title} appTag={META[variant].brandSub} />;
   const h = window.location.hash.replace(/^#/, '');
   if (h.startsWith('/stage-view/')) return <StageViewPage id={h.split('/')[2]} key={h.split('/')[2]} />;
   return <Gate variant={variant} />;

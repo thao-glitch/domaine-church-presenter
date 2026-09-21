@@ -3,7 +3,7 @@ import { useAuth } from '../auth';
 import { Button, Field } from '../components/ui';
 import { fetchChurches, registerChurch, type Church } from '../lib/api';
 
-export function LoginPage() {
+export function LoginPage({ appName = 'Church Members', appTag = 'Church Members' }: { appName?: string; appTag?: string }) {
   const { signIn, signUp, createProfile } = useAuth();
   const [mode, setMode] = useState<'in' | 'up'>('in');
   const [email, setEmail] = useState('');
@@ -45,7 +45,7 @@ export function LoginPage() {
         else {
           setMode('in');
           setError(registering
-            ? `"${newName}" registered. Confirm your email if asked, then log in.`
+            ? `"${newName}" registered — you're its Church Admin. Confirm your email if asked, then log in.`
             : 'Account created — confirm your email if asked, then log in.');
         }
       } else {
@@ -64,9 +64,9 @@ export function LoginPage() {
     <div className="auth-wrap">
       <div className="auth-card">
         <div className="auth-brand">
-          <div className="splash-logo big">DC</div>
-          <h1>Domaine Church</h1>
-          <p className="muted">One home for every church — every member is linked to their church.</p>
+          <div className="splash-logo big">{appName === 'Platform Admin' ? 'PA' : 'DC'}</div>
+          <h1>{appName}</h1>
+          <p className="muted">Domaine Church — {appTag}. Every member is linked to their church.</p>
         </div>
 
         <div className="auth-tabs">
@@ -109,8 +109,8 @@ export function LoginPage() {
             {busy ? 'Please wait…' : mode === 'in' ? 'Log in' : 'Create account'}
           </Button>
           <p className="auth-note muted">
-            New accounts default to <b>Member</b>. Your church's leadership assigns ministry roles
-            after your first log in — and everyone only sees their own church.
+            New members start as <b>Member</b>. Registering a new church makes you its
+            <b> Church Admin</b> automatically. Everyone only sees their own church.
           </p>
         </div>
       </div>

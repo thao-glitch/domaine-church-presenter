@@ -1,1 +1,0 @@
-import{c as e,j as t,R as r}from"./styles-yiTj-vJo.js";import{A as o}from"./App-Dpec4Bbu.js";e.createRoot(document.getElementById("root")).render(t.jsx(r.StrictMode,{children:t.jsx(o,{variant:"church"})}));
